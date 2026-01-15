@@ -1,0 +1,88 @@
+\documentclass[a4paper,12pt]{article}
+
+% --- Paketit ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[finnish]{babel}
+\usepackage{geometry}
+\geometry{left=3cm, right=3cm, top=3cm, bottom=3cm} % Leveämmät marginaalit (akateeminen standardi)
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage{setspace} % Rivivälistys
+\onehalfspacing       % Ilmavampi teksti on helpompi lukea
+
+% --- Otsikointi ---
+\title{\textbf{Resurssien allokoinnin optimointi vakuutuskorvausprosessissa}}
+\author{Elias Ervamaa \\ Helsingin Yliopisto}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent Tässä projektisuunnitelmassa kuvataan menetelmä työvoimareurssien optimoimiseksi vakuutusyhtiön korvauskäsittelyssä. Ongelmaa lähestytään matemaattisena optimointitehtävänä, jossa tavoitteena on minimoida asiakkaiden odotusaika budjettirajoitteen puitteissa. Menetelmä perustuu jonoteorian perusmalleihin sekä konveksiin optimointiin. Teoreettinen ratkaisu validoidaan numeerisesti simuloimalla prosessia stokastisesti. Tämän jälkeen luodaan koko prosessista selkolukuinen raportti.
+\end{abstract}
+
+\section{Johdanto}
+
+Vakuutusyhtiön korvauspalvelun tehokkuus on riippuvainen oikein mitoitetusta henkilöstöresurssista. Koska vahinkoilmoitusten saapuminen on satunnaista ja käsittelyajat vaihtelevat, prosessin hallinta vaatii tilastollista lähestymistapaa.
+
+Tarkastellaan tilannetta, jossa yhtiöllä on kaksi erillistä käsiteltävää jonoa:
+\begin{enumerate}
+    \item \textbf{Autovahingot:} Suuri volyymi, lyhyt käsittelyaika, pieni "odotushaitta".
+    \item \textbf{Henkilövahingot:} Pieni volyymi, pitkä käsittelyaika, suuri "odotushaitta".
+\end{enumerate}
+
+Tavoitteena on määrittää, kuinka monta työntekijää kumpaankin toimintoon tulisi allokoida, jotta kokonaishaitta (painotettu odotusaika) minimoituu jollekin aikavälille, kun palkkabudjetti on rajattu.
+\newpage
+\section{Matemaattinen malli}
+
+Ongelman mallintamisessa hyödynnetään jonoteoriaa, joka tarjoaa työkalut satunnaisten saapumis- ja palveluprosessien kuvaamiseen.
+
+\subsection{Oletukset ja merkinnät}
+
+Oletetaan, että molemmat jonot toimivat toisistaan riippumattomasti. Käytämme ns. M/M/1-mallia (Markovian arrival, Markovian service, Single server equivalent), jossa:
+\begin{itemize}
+    \item Asiakkaiden saapuminen noudattaa Poisson-prosessia intensiteetillä $\lambda$ (asiakasta/aikayksikkö).
+    \item Palveluajat noudattavat eksponenttijakaumaa parametrilla $\mu$ (palvelutapahtumaa/aikayksikkö).
+\end{itemize}
+
+
+
+\subsection{Optimointitehtävä}
+
+Määritellään tavoitefunktio $f(x_1, x_2)$, joka kuvaa jonotuksesta aiheutuvaa kokonaiskustannusta. Koska henkilövahinkojen viivästyminen on inhimillisesti ja maineellisesti kalliimpaa, niille asetetaan suurempi painokerroin ($w_2 > w_1$).
+
+Tavoite on:
+\begin{equation}
+    \min_{x_1, x_2} \left[f(x_1, x_2)\right]
+\end{equation}
+
+Jota rajoittaa budjettiehto:
+\begin{equation}
+    c_1 x_1 + c_2 x_2 \le B,
+\end{equation}
+missä $c_i$ on yhden työntekijän kustannus ja $B$ on kokonaisbudjetti.
+
+\newpage
+\section{Toteutussuunnitelma}
+\subsection{Analyyttinen ratkaisu}
+Tässä kohtaa ei ole vielä selvää, että tavoitefunktio tulee olemaan konveksi, mutta mikäli se on; ongelmalla on yksikäsitteinen minimikohta. Tämä ratkaistaan käyttämällä Lagrangen kertoimia. Ratkaisu antaa teoreettisen optimipisteen, kun työntekijöiden määrä $x$ oletetaan jatkuvaksi muuttujaksi.
+
+\subsection{Datan käsittely}
+Mallin parametrit ($\lambda$ ja $\mu$) estimoidaan synteettisestä datasta, jota varten luomme relaatiotietokannan tuntemattomilla parametreilla. Saapumisintensiteetit ja keskimääräiset palveluajat lasketaan SQL-kyselyillä suoraan aikaleimadatasta.
+
+\subsection{Simulaatio}
+Analyyttisen ratkaisun validointia varten rakennetaan diskreettitapahtumasimulaattori (Discrete Event Simulator) Python-kielellä. Simulaattori mallintaa yksittäisten asiakkaiden saapumista ja palvelua satunnaismuuttujien avulla. 
+
+Simulaation avulla tutkitaan:
+\begin{itemize}
+    \item Miten systeemi käyttäytyy, kun työntekijöiden määrä on pakotettu kokonaisluvuksi.
+    \item Kuinka suuri riski on jonojen tilapäiselle ruuhkautumiselle diskreetissä työntekijätapauksessa, vaikka keskiarvot olisivat hallinnassa.
+\end{itemize}
+
+\subsection{Raportti}
+Lopullinen analyysi kootaan raportiksi, jossa yhdistyvät matemaattinen teoria ja visuaalinen todistusaineisto.
+
+\end{document}
