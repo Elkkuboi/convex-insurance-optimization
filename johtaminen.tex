@@ -10,7 +10,7 @@
 
 % --- Grafiikka ja kuvaajat (TikZ & PGFPlots) ---
 \usepackage{tikz}
-\usetikzlibrary{positioning, automata, arrows.meta}
+\usetikzlibrary{positioning, automata, arrows.meta, patterns, decorations.pathreplacing}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 \usepgfplotslibrary{fillbetween}
@@ -224,7 +224,6 @@ Saamme rekursiokaavan $p_n = \rho p_{n-1}$, joka sitoo jokaisen tilan edelliseen
 \end{derivationbox}
 
 
-\newpage
 \subsection{Jakauman johtaminen}
 Saimme yleisen termin $p_n = \rho^n p_0$. Koska todennäköisyyksien summan täytyy olla 1, voimme ratkaista tuntemattoman vakion $p_0$:
 
@@ -284,7 +283,7 @@ Sijoittamalla $p_0$ takaisin yleiseen termiin saamme lopullisen todennäköisyys
 
 
 
-\newpage
+
 \subsection{Odotettu asiakasmäärä $L$}
 
 Olkoon satunnaismuuttuja $N$ asiakkaiden lukumäärä systeemissä. Äsken johdettu $p_n$ on muuttujan $N$ todennäköisyysfunktio, eli $P(N=n) = p_n$.
@@ -321,35 +320,365 @@ Palautetaan alkuperäiset muuttujat sijoittamalla $\rho = \frac{\lambda}{x\mu}$:
 Eli odotettu asiakasmäärä on: $\frac{\lambda}{x\mu - \lambda}$
 
 
-% TÄHÄN TULEE LOPPUTULOS W(x) (Little's Law)
+\subsection{Odotusaika $W$}
+
+Olemme johtaneet jonon keskimääräisen työntekijämäärästä riippuvan pituuden $L(x)$. Asiakkaan näkökulmasta relevantimpi suure on kuitenkin odotusaika $W$, eli aika, joka kuluu jonottamiseen ja palveluun yhteensä.
+
+Stabiilissa systeemissä pätee Littlen Laki, joka sitoo keskimääräisen lukumäärän ja viipymän toisiinsa saapumisintensiteetin kautta:
+\begin{equation*}
+    L = \lambda W
+\end{equation*}
+
+Ratkaistaan odotusaika $W(x)$ jakamalla aiemmin johdettu $L(x)$ saapumisintensiteetillä $\lambda$:
+\begin{equation*} \label{eq:wait_time}
+    W(x) = \frac{L(x)}{\lambda} = \frac{1}{\lambda} \cdot \frac{\lambda}{x\mu - \lambda} = \frac{1}{x\mu - \lambda}
+\end{equation*}
+
+
+
+\subsubsection*{Konveksisuustarkastelu}
+
+Optimoinnin onnistumisen kannalta on kriittistä varmistaa, että odotusaikafunktio $W(x)$ on konveksi muuttujan $x$ suhteen. Tarkastellaan funktion toista derivaattaa:
+
+\begin{align*}
+    W(x) &= (x\mu - \lambda)^{-1} \\
+    W'(x) &= -1 \cdot (x\mu - \lambda)^{-2} \cdot \mu = -\frac{\mu}{(x\mu - \lambda)^2} \\
+    W''(x) &= -(-2) \cdot (x\mu - \lambda)^{-3} \cdot \mu \cdot \mu = \frac{2\mu^2}{(x\mu - \lambda)^3}
+\end{align*}
+
+Stabiilisuusehdon nojalla tiedämme, että $x > \lambda/\mu$, jolloin termi $(x\mu - \lambda)$ on positiivinen.
+Koska myös osoittaja $2\mu^2$ on aina positiivinen, pätee koko määrittelyjoukossa:
+\begin{equation*}
+    W''(x) > 0 \tag*{(\text{W on konveksi})}
+\end{equation*}
+
+
+
+
+
+
 
 \newpage
 
 \section{Optimointiongelma}
 
-\subsection{Ongelman asettelu}
-Minimoitava tavoitefunktio ja rajoitteet:
+\subsection{Karush-Kuhn-Tucker-ehdot}
+Tavoitteena on minimoida kahden jonon ($i=1, 2$) painotettu yhteenlaskettu odotusaika budjettirajoitteella.
+Välttämätön oletus: budjetti $B$ on riittävä kattamaan minimistabilisuuden (eli $B > \sum c_i \frac{\lambda_i}{\mu_i}$).
 
-% TÄHÄN TULEE KAAVAT
+Tarkastellaan minimointiongelmaa, jossa on kaksi epäyhtälörajoitetta: budjettirajoite $h(x)$ ja stabiilisuusrajoitteet $g_i(x)$.
 
-\vspace{3cm}
+\begin{align*}
+    \min \quad & f(x) = \sum_{i=1}^2 \frac{w_i}{x_i \mu_i - \lambda_i} \\
+    \text{ehdoilla:} \quad & h(x) = \sum_{i=1}^2 c_i x_i - B \le 0 \quad (\text{Budjetti}) \\
+    & g_i(x) = \frac{\lambda_i}{\mu_i} - x_i \le 0 \quad (\text{Stabiilisuus}, \forall i)
+\end{align*}
 
-\subsection{Lagrangen menetelmä}
+Muodostetaan Lagrangen funktio, jossa $\alpha$ on budjettirajoitteen kertoja ja $\beta_i$ ovat stabiilisuusrajoitteiden kertoimet:
+\begin{equation*}
+    \mathcal{L}(x, \alpha, \beta) = f(x) + \alpha h(x) + \sum_{i=1}^2 \beta_i g_i(x)
+\end{equation*}
 
-Muodostetaan Lagrangen funktio $\mathcal{L}(x_1, x_2, \alpha)$:
+Optimipisteessä $x^*$ ja kertoimilla $\alpha, \beta$ on oltava voimassa seuraavat ehdot:
 
-% TÄHÄN TULEE LAGRANGEN FUNKTIO
+\begin{enumerate}
+    \item \textbf{Stationaarisuus} \\
+    Gradienttien summa on nolla.
+    \begin{equation*}
+        \nabla f(x^*) + \alpha \nabla h(x^*) + \sum_{i=1}^2 \beta_i \nabla g_i(x^*) = 0
+    \end{equation*}
+    
+    \item \textbf{Komplementaarinen löysyys} \\
+    Kertojan ja rajoitteen tulon on oltava nolla.
+    \begin{align*}
+        \alpha \cdot h(x^*) &= 0 \\
+        \beta_i \cdot g_i(x^*) &= 0 \quad (\forall i)
+    \end{align*}
+    
+    \item \textbf{Pääongelman kelvollisuus} \\
+    \begin{equation*}
+        h(x^*) \le 0, \quad g_i(x^*) \le 0
+    \end{equation*}
+    
+    \item \textbf{Duaaliongelman kelvollisuus} \\
+    \begin{equation*}
+        \alpha \ge 0, \quad \beta_i \ge 0
+    \end{equation*}
+\end{enumerate}
 
-\vspace{3cm}
 
-Ratkaistaan KKT-ehdot (osittaisderivaatat nollaksi):
+\subsection{Yhtälöryhmän ratkaisu}
 
-% TÄHÄN TULEE DERIVOINTI JA YHTÄLÖRYHMÄN RATKAISU
+KKT-ehdot muodostavat yhtälöryhmän, joka ratkaistaan usein päättelemällä ensin, mitkä rajoitteet ovat aktiivisia (eli yhtä suuria kuin nolla) ja mitkä passiivisia (pienempiä kuin nolla).
 
-\vspace{8cm}
+\textbf{Stabiilisuusrajoitteiden eliminointi} \\
+Tarkastellaan ensin stabiilisuusehtoa $g_i(x) \le 0$. Tavoitefunktio $f(x)$ kasvaa äärettömäksi, kun lähestytään stabiilisuusrajaa ($\lambda_i/\mu_i$). Koska haemme minimiä, optimipiste $x^*$ asettuu väistämättä kauas tästä rajasta, eli stabiilisuusalueen sisäpisteeseen.
+Tällöin pätee $g_i(x^*) < 0$.
+\begin{itemize}
+    \item \textbf{Primaalikelpoisuus (3):} Ehto $g_i \le 0$ toteutuu aidosti.
+    \item \textbf{Komplementaarisuus (2):} Koska rajoite on aidosti negatiivinen, on sen kertoimen oltava nolla: $\beta_i = 0$.
+\end{itemize}
+Tämän seurauksena stabiilisuustermit poistuvat stationaarisuusyhtälöstä.
 
-\subsection{Lopputulos}
+\textbf{Budjettirajoitteen aktiivisuus ja kertoimen $\alpha$ merkki} \\
+Kun $\beta_i=0$, stationaarisuusehto (Ehto 1) yksinkertaistuu muotoon:
+\begin{equation*}
+    \nabla f(x^*) + \alpha \nabla h(x^*) = 0
+\end{equation*}
+Tutkitaan gradienttien suuntia osittaisderivaattojen avulla:
+\begin{align*}
+    \frac{\partial f}{\partial x_i} &= -\frac{w_i \mu_i}{(x_i \mu_i - \lambda_i)^2} \quad (< 0, \text{ koska } w, \mu > 0) \\
+    \frac{\partial h}{\partial x_i} &= c_i \quad (> 0, \text{ koska hinnat } > 0)
+\end{align*}
+Sijoitetaan nämä stationaarisuusehtoon:
+\begin{equation*}
+    \underbrace{\frac{\partial f}{\partial x_i}}_{(-)} + \alpha \underbrace{\frac{\partial h}{\partial x_i}}_{(+)} = 0
+\end{equation*}
+Jotta negatiivinen ja positiivinen termi voisivat kumota toisensa nollaksi, on kertoimen $\alpha$ oltava aidosti positiivinen ($\alpha > 0$).
 
-% TÄHÄN TULEE LOPULLISET KAAVAT
+Tästä seuraa:
+\begin{itemize}
+    \item \textbf{Duaalikelpoisuus (4):} Vaatimus $\alpha \ge 0$ toteutuu, koska löysimme, että $\alpha > 0$.
+    \item \textbf{Budjetin käyttö (2):} Koska $\alpha \neq 0$, komplementaarisuusehto vaatii, että $h(x^*) = 0$.
+\end{itemize}
+Tämä tarkoittaa, että primaalikelpoisuus (3) budjetille toteutuu yhtäsuuruutena:
+\begin{equation*}
+    \sum c_i x_i^* - B = 0 \implies \sum c_i x_i^* = B
+\end{equation*}
+
+\textbf{Muuttujien ratkaiseminen stationaarisuusehdosta} \\
+Nyt kun tiedämme, että $\alpha > 0$, voimme ratkaista resurssit $x_i$ sen funktiona. Kirjoitetaan gradienttiyhtälö auki:
+\begin{equation*}
+    \frac{-w_i \mu_i}{(x_i \mu_i - \lambda_i)^2} + \alpha c_i = 0
+\end{equation*}
+Siirretään termit ja ratkaistaan $x_i$:
+\begin{equation*}
+    (x_i \mu_i - \lambda_i)^2 = \frac{w_i \mu_i}{c_i \alpha} \implies x_i = \frac{\lambda_i}{\mu_i} + \frac{1}{\mu_i \sqrt{\alpha}} \sqrt{\frac{w_i \mu_i}{c_i}}
+\end{equation*}
+
+\textbf{Kertoimen $\alpha$ eliminointi ja tulkinta} \\
+Meillä on nyt lauseke $x_i$:lle, mutta se riippuu tuntemattomasta $\alpha$. Käytetään tietoa, että koko budjetti kuluu.
+Sijoitetaan $x_i$:n lauseke budjettiyhtälöön:
+\begin{equation*}
+    \sum_{i=1}^2 c_i \left( \frac{\lambda_i}{\mu_i} + \frac{1}{\mu_i \sqrt{\alpha}} \sqrt{\frac{w_i \mu_i}{c_i}} \right) = B
+\end{equation*}
+Avataan summa kahteen osaan:
+\begin{equation*}
+    \sum_{i=1}^2 \frac{c_i \lambda_i}{\mu_i} + \frac{1}{\sqrt{\alpha}} \sum_{i=1}^2 \frac{c_i}{\mu_i} \sqrt{\frac{w_i \mu_i}{c_i}} = B
+\end{equation*}
+Ensimmäinen termi $\sum \frac{c_i \lambda_i}{\mu_i}$ kuvaa kustannusta, joka vaaditaan pelkästään jonojen pitämiseen stabiilina (minimiresurssit). Merkitään tätä selkeyden vuoksi symbolilla $B_{min}$.
+\begin{equation*}
+    B_{min} = \sum_{i=1}^2 \frac{c_i \lambda_i}{\mu_i}
+\end{equation*}
+
+Nyt yhtälö sievenee muotoon:
+\begin{align*}
+    \sum_{i=1}^2 \frac{c_i \lambda_i}{\mu_i} + \frac{1}{\sqrt{\alpha}} \sum_{i=1}^2 \frac{c_i}{\mu_i} \sqrt{\frac{w_i \mu_i}{c_i}} &= B \\
+    B_{min} + \frac{1}{\sqrt{\alpha}} \sum_{i=1}^2 \sqrt{\frac{c_i^2 \cdot w_i \mu_i}{\mu_i^2 \cdot c_i}} &= B \\
+    B_{min} + \frac{1}{\sqrt{\alpha}} \sum_{i=1}^2 \sqrt{\frac{w_i c_i}{\mu_i}} &= B
+\end{align*}
+
+Tästä voimme ratkaista termin $1/\sqrt{\alpha}$, joka kuvaa budjetin jakosuhdetta:
+\begin{equation*}
+    \frac{1}{\sqrt{\alpha}} = \frac{B - B_{min}}{\sum_{j=1}^2 \sqrt{\frac{w_j c_j}{\mu_j}}}
+\end{equation*}
+Lopuksi sijoitamme tämän takaisin vaiheessa 3 johdettuun $x_i$:n lausekkeeseen. Saamme:
+\begin{equation*}
+    x_i^* = \frac{\lambda_i}{\mu_i} + \frac{1}{\mu_i} \sqrt{\frac{w_i \mu_i}{c_i}} \left( \frac{B - B_{min}}{\sum_{j=1}^2 \sqrt{\frac{w_j c_j}{\mu_j}}} \right)
+\end{equation*}    
+
+
+\subsection{Optimaalisuuden riittävyys}
+
+Edellä johdettu ratkaisu $x^*$ perustuu KKT-ehtojen välttämättömyyteen. Jotta voimme varmistua siitä, että kyseessä on aidosti tavoitefunktion minimoiva ratkaisu, on tarkasteltava ongelman konveksisuutta.
+
+Optimointiteorian perustuloksen mukaan KKT-ehdot ovat riittäviä globaalille optimille, mikäli optimointitehtävä on konveksi. Tässä tapauksessa ehdot täyttyvät:
+
+\begin{itemize}
+    \item \textbf{Kohdefunktion konveksisuus:} Osoitimme aiemmin toisen derivaatan tarkastelulla, että odotusaikafunktio $W(x_i)$ on aidosti konveksi ($W'' > 0$) koko määrittelyalueellaan. Kahden konveksin funktion summa $f(x)$ on edelleen konveksi.
+    \item \textbf{Rajoitejoukon konveksisuus:} Budjettirajoite $h(x)$ ja stabiilisuusrajoitteet $g_i(x)$ ovat lineaarisia (affiineja) funktioita. Lineaariset epäyhtälöt rajaavat aina konveksin joukon (puoliavaruuksien leikkaus).
+\end{itemize}
+
+Koska minimoimme konveksia funktiota konveksissa joukossa, löydetty KKT-piste $x^*$ on ongelman yksikäsitteinen \textbf{globaali minimi}.
+
+
+
+\newpage
+\section{Lopputulos}
+
+\subsection{Analyyttinen ratkaisu}
+
+Optimointiongelman ratkaisuna saamme analyyttisen kaavan optimaaliselle resurssimäärälle $x_i^*$ jokaiselle jonolle $i$. Ratkaisu voidaan esittää muodossa:
+
+\begin{derivationbox}
+\begin{equation*} \label{eq:final_result}
+    x_i^* = \underbrace{\frac{\lambda_i}{\mu_i}}_{\text{Minimitarve}} + \underbrace{\frac{\sqrt{w_i / c_i \mu_i}}{\sum_{j} \sqrt{w_j c_j / \mu_j}}}_{\text{Allokaatiosuhde}} \cdot \underbrace{\left( B - B_{min} \right)}_{\text{Ylijäämäbudjetti}}
+\end{equation*}  
+Missä $B_{min} = \sum \frac{c_j \lambda_j}{\mu_j}$ on stabiilisuuden vaatima minimibudjetti.
+\end{derivationbox}
+
+
+\subsection{Tulkinta:}
+
+Kaava (\ref{eq:final_result}) tunnetaan jonoteoriassa ja palveluoperaatioiden johtamisessa nimellä \textit{Square Root Staffing Principle}. Se jakaa resurssit kahteen komponenttiin:
+\begin{enumerate}
+    \item \textbf{Stabiilisuuskomponentti:} Jokaiselle jonolle on ensin annettava sen liikennekuormaa vastaava määrä resursseja ($\rho = 1$), jotta jono ei kasva äärettömäksi.
+    \item \textbf{Optimointikomponentti:} Kun minimitarve on tyydytetty, jäljelle jäävä budjetti jaetaan jonojen kesken. Jakosuhde ei ole suoraan verrannollinen painoarvoihin $w_i$, vaan neliöjuuritermiin $\sqrt{w_i}$.
+\end{enumerate}
+
+Tämä tarkoittaa, että jos jonon 1 tärkeyskerroin $w_1$ nelinkertaistuu, se ei saa nelinkertaista määrää lisäresursseja, vaan ainoastaan kaksinkertaisen määrän suhteessa muihin. Tämä vaimennettu reaktio johtuu jonotusteorian konveksisuudesta: ensimmäiset lisäresurssit tuovat suurimman hyödyn, mutta hyöty vähenee resurssien kasvaessa.
+
+\newpage
+\subsection{Numeerinen havainnollistaminen}
+
+Tarkastellaan esimerkkitilannetta, jossa meillä on kaksi jonoa. Jono 1 on kriittinen ($w_1=4$) ja Jono 2 on normaali ($w_2=1$). Muut parametrit ovat identtiset ($\lambda=5, \mu=1, c=1$).
+Minimibudjetti stabiilisuudelle on $5+5=10$ yksikköä.
+
+Kuvaaja osoittaa, kuinka optimaalinen miehitys $x_i$ muuttuu kokonaisbudjetin $B$ kasvaessa.
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[
+    width=12cm, height=8cm,
+    title={Resurssien allokaatio budjetin funktiona ($w_1=4, w_2=1$)},
+    xlabel={Kokonaisbudjetti $B$},
+    ylabel={Työntekijöiden määrä $x_i$},
+    xmin=10, xmax=20,
+    ymin=5, ymax=12,
+    grid=major,
+    legend pos=north west,
+    domain=10:20,
+    samples=50
+]
+    % Parametrit selityksenä (näkymätön laskentaan):
+    % Lambda = 5, Mu = 1 -> Minimi x = 5.
+    % B_min = 10.
+    % w1 = 4 -> sqrt(4) = 2.
+    % w2 = 1 -> sqrt(1) = 1.
+    % Jakaja = 2 + 1 = 3.
+    % x1_extra_osuus = 2/3.
+    % x2_extra_osuus = 1/3.
+
+    % Jono 1 (Painotettu, w=4)
+    % Kaava: 5 + (2/3)*(x - 10)
+    \addplot[blue, very thick] {5 + (2/3)*(x - 10)};
+    \addlegendentry{Jono 1 (Korkea prioriteetti, $w=4$)}
+
+    % Jono 2 (Normaali, w=1)
+    % Kaava: 5 + (1/3)*(x - 10)
+    \addplot[red, very thick, dashed] {5 + (1/3)*(x - 10)};
+    \addlegendentry{Jono 2 (Matala prioriteetti, $w=1$)}
+
+    % Minimitaso
+    \draw[gray, dotted, thick] (axis cs:10, 5) -- (axis cs:20, 5);
+    \node[anchor=south east] at (axis cs:20, 5) {Stabiilisuusraja ($\lambda/\mu$)};
+
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+Kuvaajasta nähdään selvästi teoreettinen tulos:
+\begin{itemize}
+    \item Kun $B=10$ (minimibudjetti), molemmat jonot ovat juuri ja juuri stabiileja ($x_1=x_2=5$).
+    \item Kun budjetti ylittää minimin, ylijäämä jaetaan jonojen kesken suhteessa painokertoimien neliöjuuriin ($\sqrt{w_i}$). Tässä esimerkissä suhde on $\sqrt{4} : \sqrt{1} = 2 : 1$.
+\end{itemize}
+
+
+\newpage
+\section{Teoreettinen verrokki simulaatiolle}
+
+Jotta voimme myöhemmin verrata tuloksia simulaation tuloksiin, laskemme tarkan teoreettisen optimin seuraavalle esimerkkitapaukselle.
+
+\textbf{Skenaario:}
+Sovelletaan johdettua kaavaa konkreettiseen liiketoimintatilanteeseen. Kuvitellaan vakuutusyhtiö, jonka korvausosastolla on kaksi erillistä käsittelyjonoa:
+
+\begin{enumerate}
+    \item \textbf{Henkilövahingot (Jono 1):}
+    \begin{itemize}
+        \item Kriittisiä tapauksia, korkea painoarvo ($w_1 = 25$).
+        \item Hidas käsittely ($\mu_1 = 0.5$ / $t$) ja kallis resurssi ($c_1 = 2$).
+        \item Harvinainen ($\lambda_1 = 2$ / $t$).
+    \end{itemize}
+    
+    \item \textbf{Autovahingot (Jono 2):}
+    \begin{itemize}
+        \item Matala painoarvo ($w_2 = 1$).
+        \item Nopea käsittely ($\mu_2 = 1$ / $t$) ja edullinen resurssi ($c_2 = 1$).
+        \item Yleinen ($\lambda_2 = 10$ / $t$).
+    \end{itemize}
+\end{enumerate}
+
+Kokonaisbudjetti olkoon $B = 30$.
+
+\subsubsection*{Laskelmat}
+
+\textbf{Minimiresurssit (Stabiilisuus):}
+Kapasiteetin on ylitettävä kysyntä ($x \mu > \lambda$).
+\begin{itemize}
+    \item Henkilövahingot: $2 / 0.5 = 4.0$ resurssiyksikköä. Hinta $4 \cdot 2 = 8$.
+    \item Autovahingot: $10 / 1 = 10.0$ resurssiyksikköä. Hinta $10 \cdot 1 = 10$.
+\end{itemize}
+Minimibudjetti $B_{min} = 18$. Optimointiin jäävä budjetti on $B - B_{min} = 30 - 18 = 12$.
+
+\textbf{Optimointi:}
+Lasketaan jakajatermi (summa neliöjuuritermeistä $\sqrt{w c / \mu}$):
+\begin{itemize}
+    \item Henkilövahingot: $\sqrt{25 \cdot 2 / 0.5} = \sqrt{100} = 10$.
+    \item Autovahingot: $\sqrt{1 \cdot 1 / 1} = \sqrt{1} = 1$.
+\end{itemize}
+Jakajasumma on $10 + 1 = 11$. Skaalaustermi on $S = 12 / 11 \approx 1.091$.
+
+\textbf{Tulos:}
+Sijoitetaan luvut kaavaan:
+\begin{itemize}
+    \item Henkilövahingot ($x_1^*$): $4 + \left(\frac{1}{0.5}\sqrt{\frac{25 \cdot 0.5}{2}}\right) \cdot S = 4 + (5 \cdot 1.091) = 9.45$
+    \item Autovahingot ($x_2^*$): $10 + \left(\frac{1}{1}\sqrt{\frac{1 \cdot 1}{1}}\right) \cdot S = 10 + (1 \cdot 1.091) = 11.09$
+\end{itemize}
+
+\subsubsection*{Tulkinta ja simulaation lähtökohta}
+
+Saatu tulos $x^* = (9.45, 11.09)$ on matemaattinen optimi. Reaalimaailmassa emme kuitenkaan voi palkata 0.45 henkilöä. Tämä tulos toimii vertauskohteena simulaatiolle:
+\begin{itemize}
+    \item Tiedämme, että paras mahdollinen tulos saavutetaan lähellä tätä pistettä.
+    \item Simulaatiossa on kokeiltava diskreettejä naapuruston arvoja: $(9, 12)$ tai $(10, 11)$.
+    \item Teoreettinen malli osoittaa, että vaikka budjettia lisättiin merkittävästi, autovahingot (Jono 2) saavat vain 1.09 yksikköä lisäresurssia, kun taas henkilövahingot (Jono 1) saavat 5.45 yksikköä lisää. Tämä johtuu henkilövahinkojen korkeasta tärkeyskertoimesta ja hitaasta palvelusta, jolloin resurssien lisäämisen rajahyöty on suuri.
+\end{itemize}
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[
+    ybar stacked,
+    width=11cm, height=7cm,
+    ymin=0, ymax=16,
+    symbolic x coords={Henkilövahingot, Autovahingot},
+    xtick=data,
+    ylabel={Resurssimäärä $x_i$},
+    legend style={at={(0.5,-0.15)}, anchor=north, legend columns=-1},
+    grid=major,
+    bar width=35pt,
+    nodes near coords,
+    nodes near coords align={center},
+    point meta=rawy, % Käyttää y-arvoja suoraan
+    /pgf/number format/.cd, fixed, precision=2 % 2 desimaalia
+]
+    % Pakollinen osa
+    \addplot+[fill=blue!50, text=white] coordinates {(Henkilövahingot, 4) (Autovahingot, 10)};
+    \addlegendentry{Minimitarve}
+
+    % Optimilisä
+    \addplot+[fill=red!50] coordinates {(Henkilövahingot, 5.45) (Autovahingot, 1.09)};
+    \addlegendentry{Teoreettinen optimilisä}
+    
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+
+
+
+
+
+
+
 
 \end{document}
