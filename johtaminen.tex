@@ -10,9 +10,31 @@
 
 % --- Grafiikka ja kuvaajat (TikZ & PGFPlots) ---
 \usepackage{tikz}
+\usetikzlibrary{positioning, automata, arrows.meta}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 \usepgfplotslibrary{fillbetween}
+
+
+% --- Laatikko ---
+\usepackage[most]{tcolorbox}
+
+\newtcolorbox{derivationbox}[1][]{
+  breakable,                % Sallii laatikon jakautumisen sivunvaihdossa
+  enhanced,
+  colback=gray!5,          % Hyvin vaalea harmaa tausta
+  colframe=gray!50!black,  % Tummanharmaa reunus
+  title={#1},              % Otsikko parametrista
+  fonttitle=\bfseries\sffamily,
+  attach boxed title to top left={yshift=-2mm, xshift=2mm},
+  boxed title style={
+    colback=gray!50!black,
+    sharp corners
+  },
+  %sharp corners=south,     % Alakulmat terävät
+  arc=3mm,                 % Yläkulmat pyöristetyt
+  parbox=false             % Sallii tavallisen tekstin ja kaavat
+}
 
 % --- Tyyliasetukset ---
 \setlength{\parindent}{0pt}
@@ -100,37 +122,176 @@ Tässä $\mu$ kuvaa palvelunopeutta (rate), joten keskimääräinen palveluaika 
 
 \newpage
 
+
 \section{M/M/1-jonon johtaminen}
-
-Tarkastellaan yhtä jonoa. Määritellään liikennekuorma $\rho = \frac{\lambda}{x\mu}$.
-
 \subsection{Tasapainoehto}
 
-Jotta jono pysyisi tasapainotilassa eikä kasvaisi rajatta, on $x > \frac{\lambda}{\mu}$ (eli $\rho < 1$). Oletetaan, että on kulunut tietty aika, jonka jälkeen jonon jakauma on vakaassa tilassa:
+% Jotta jono pysyisi tasapainotilassa eikä kasvaisi rajatta, on $x > \frac{\lambda}{\mu}$ (eli $\rho < 1$). Oletetaan, että on kulunut tietty aika, jonka jälkeen jonon jakauma on vakaassa tilassa:
 
+Mallinnetaan yhtä jonoa jatkuva-aikaisena Markov-ketjuna. Systeemin tila $n \in \{0, 1, 2, \dots\}$ kertoo asiakkaiden kokonaismäärän (jonossa + palvelussa).
+Systeemin dynamiikka perustuu kahteen voimaan:
+\begin{itemize}
+    \item \textbf{Saapuminen:} Uusi asiakas saapuu intensiteetillä $\lambda$, mikä nostaa tilaa ($n \to n+1$).
+    \item \textbf{Poistuminen:} Palvelu valmistuu intensiteetillä $x\mu$, mikä laskee tilaa ($n \to n-1$). Tämä on mahdollista vain, kun systeemissä on asiakkaita ($n \ge 1$).
+\end{itemize}
+
+Määritellään liikennekuorma $\rho = \frac{\lambda}{x\mu}$.
+Systeemin stabiilisuus vaatii ehdon $x > \frac{\lambda}{\mu}$ (eli $\rho < 1$).
+Oletetaan, että systeemi on ollut toiminnassa riittävän kauan, jolloin alkutilanteen vaikutus on hävinnyt ja systeemi on saavuttanut stokastisen tasapainon. Tämä tapahtuu koska $\rho < 1$, jono ei kasva äärettömyyksiin, vaan todennäköisyysjakauma $p_n$ stabiloituu ajasta riippumattomaksi vakiojakaumaksi. Tässä vakaassa tilassa todennäköisyysvirta tilojen välillä tasaantuu: pitkällä aikavälillä keskimääräinen siirtymä mihin tahansa tilaan $n$ täytyy olla yhtä suuri kuin siirtymä sieltä pois.
+
+Voimme visualisoida tämän tilakaaviona, jossa ympyrät kuvaavat tiloja ja nuolet siirtymäintensiteettejä:
+
+
+
+\begin{center}
+\begin{tikzpicture}[>=stealth, node distance=2.5cm, on grid, auto, initial text=, initial where=left]
+    % Tyylit
+    \tikzstyle{state}=[circle, draw=black!75, fill=yellow!20, very thick, minimum size=8mm]
+    \tikzstyle{arrow}=[->, thick, draw=blue!50!black]
+
+    % Tilat (Solmut)
+    \node[state] (0) {0};
+    \node[state] (1) [right=of 0] {1};
+    \node[state] (2) [right=of 1] {2};
+    \node[state] (3) [right=of 2] {3};
+    \node (4) [right=of 3, xshift=-0.5cm] {$\dots$}; % Pisteet
+    \node[state] (k) [right=of 3] {$n$};
+    \node[state] (k1) [right=of k] {$n+1$};
+    \node (end) [right=of k1, xshift=-0.5cm] {$\dots$};
+
+    % Siirtymät (Nuolet)
+    % Lambda (oikealle)
+    \draw[arrow, cyan!80!black] (0) edge [bend left=45] node {$\lambda$} (1);
+    \draw[arrow, cyan!80!black] (1) edge [bend left=45] node {$\lambda$} (2);
+    \draw[arrow, cyan!80!black] (2) edge [bend left=45] node {$\lambda$} (3);
+    \draw[arrow, cyan!80!black] (k) edge [bend left=45] node {$\lambda$} (k1);
+
+    % Mu (vasemmalle) - Huom: mallissa teho on x*mu
+    \draw[arrow, red!60!black] (1) edge [bend left=45] node {$x\mu$} (0);
+    \draw[arrow, red!60!black] (2) edge [bend left=45] node {$x\mu$} (1);
+    \draw[arrow, red!60!black] (3) edge [bend left=45] node {$x\mu$} (2);
+    \draw[arrow, red!60!black] (k1) edge [bend left=45] node {$x\mu$} (k);
+
+\end{tikzpicture}
+\end{center}
+
+Tarkastellaan leikkausta kahden tilan välissä. Jotta tilannetta kuvaava todennäköisyysjakauma $p_n$ pysyisi vakiona, täytyy virran leikkauksen yli oikealle olla yhtä suuri kuin virran vasemmalle.
+Tästä saamme \textbf{globaalin tasapainoyhtälön}:
+
+\begin{equation*}
+    \underbrace{\lambda \cdot p_n}_{\text{Virta ylös } (n \to n+1)} = \underbrace{x\mu \cdot p_{n+1}}_{\text{Virta alas } (n+1 \to n)}
+\end{equation*}
+
+\textbf{Erikoistapaus}
+Systeemi siirtyy tyhjästä (0) tilaan (1) intensiteetillä $\lambda$. Paluu tapahtuu intensiteetillä $x\mu$. Tasapainoehto on:
+\begin{equation*}
+    \lambda p_0 = x\mu p_1 \implies p_1 = \frac{\lambda}{x\mu} p_0 = \rho p_0 \tag*{(\text{globaali ehto pätee!})}
+\end{equation*}
+
+\subsection{Yleinen jäsen}
+
+Saamme rekursiokaavan $p_n = \rho p_{n-1}$, joka sitoo jokaisen tilan edelliseen. 
 \begin{align*}
-    \intertext{Tasapainoehto tilojen $n-1$ ja $n$ välillä (sisäänvirtaus = ulosvirtaus):}
-    \lambda p_{n-1} &= (x \mu) p_n \\
-    p_n &= \frac{\lambda}{x \mu} p_{n-1} = \rho p_{n-1} \\
-    \intertext{Iteroimalla tätä rekursiota alkaen tilasta $n=0$ saadaan yleinen termi:}
-    p_n &= \rho^n p_0 \\
-    \intertext{Koska todennäköisyyksien summan täytyy olla 1, saamme äärettömän geometrisen sarjan:}
-    \sum_{n=0}^{\infty} p_n &= p_0 \sum_{n=0}^{\infty} \rho^n = 1 \\
-    \intertext{Kun $\rho < 1$, geometrinen sarja suppenee arvoon $\frac{1}{1-\rho}$. Ratkaistaan $p_0$:}
-    p_0 \cdot \frac{1}{1-\rho} &= 1 \quad \implies \quad p_0 = 1 - \rho \\
-    \intertext{Tällöin lopullinen todennäköisyysjakauma jonon pituudelle $n$ on:}
-    p_n &= (1-\rho)\rho^n
+    n=1: \quad p_1 &= \rho p_0 \\
+    n=2: \quad p_2 &= \rho p_1 = \rho(\rho p_0) = \rho^2 p_0 \\
+    n=3: \quad p_3 &= \rho p_2 = \rho(\rho^2 p_0) = \rho^3 p_0 \\
+    &\vdots \\
+    \text{Yleisesti: } \quad p_n &= \rho^n p_0
 \end{align*}
 
-\vspace{1cm}
+\begin{derivationbox}
+\begin{proof}
+    \textbf{Alkuaskel:} \\
+    Kun $n=0$, saamme $\rho^0 p_0 = 1 \cdot p_0 = p_0$, tosi.
 
+    \textbf{Induktio-oletus:} \\
+    Oletetaan, että väite on tosi mielivaltaisella arvolla $n=k$, eli $p_k = \rho^k p_0$.
+
+    \textbf{Induktioaskel:} \\
+    Tarkastellaan arvoa $n=k+1$. Tasapainoyhtälön mukaan:
+    \begin{equation*}
+        p_{k+1} = \rho \cdot p_k
+    \end{equation*}
+    Sijoitetaan tähän induktio-oletus $p_k$:n paikalle:
+    \begin{equation*}
+        p_{k+1} = \rho \cdot (\rho^k p_0) = \rho^{k+1} p_0
+    \end{equation*}
+    Tämä vastaa väitettä arvolla $n=k+1$.
+
+    \textbf{Päätös:} \\
+    Kaava $p_n = \rho^n p_0$ pätee kaikilla kokonaisluvuilla $n \ge 0$.
+\end{proof}
+\end{derivationbox}
+
+
+\newpage
+\subsection{Jakauman johtaminen}
+Saimme yleisen termin $p_n = \rho^n p_0$. Koska todennäköisyyksien summan täytyy olla 1, voimme ratkaista tuntemattoman vakion $p_0$:
+
+
+\begin{equation*}
+    \sum_{n=0}^{\infty} p_n = p_0 \sum_{n=0}^{\infty} \rho^n = 1
+\end{equation*}
+
+Kun stabiilisuusehto $\rho < 1$ on voimassa, geometrinen sarja suppenee arvoon $\frac{1}{1-\rho}$.
+\begin{equation*}
+    p_0 \cdot \frac{1}{1-\rho} = 1 \implies p_0 = 1 - \rho
+\end{equation*}
+
+Sijoittamalla $p_0$ takaisin yleiseen termiin saamme lopullisen todennäköisyysjakauman:
+\begin{equation*} \label{eq:pn_distribution}
+    p_n = (1-\rho)\rho^n
+\end{equation*}
+
+
+
+
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[
+    width=12cm, height=7cm,
+    title={Systeemin tilajakauma $p_n$},
+    xlabel={Asiakkaiden määrä ($n$)},
+    ylabel={Todennäköisyys $p_n$},
+    xmin=-0.5, xmax=15.5,
+    ymin=0, ymax=0.6,
+    ybar=0pt,
+    bar width=8pt,
+    legend pos=north east,
+    grid=major
+]
+    % Tapaus 1: Rho = 0.5
+    \addplot[fill=blue!40, draw=blue] coordinates {
+        (0,0.500) (1,0.250) (2,0.125) (3,0.063) (4,0.031)
+        (5,0.016) (6,0.008) (7,0.004) (8,0.002) (9,0.001)
+        (10,0.001) (11,0.000) (12,0.000) (13,0.000) (14,0.000) (15,0.000)
+    };
+    \addlegendentry{$\rho = 0.5$}
+
+    % Tapaus 2: Rho = 0.8
+    \addplot[fill=red!40, draw=red] coordinates {
+        (0,0.200) (1,0.160) (2,0.128) (3,0.102) (4,0.082)
+        (5,0.066) (6,0.052) (7,0.042) (8,0.034) (9,0.027)
+        (10,0.021) (11,0.017) (12,0.014) (13,0.011) (14,0.009) (15,0.007)
+    };
+    \addlegendentry{$\rho = 0.8$}
+    
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+
+
+
+\newpage
 \subsection{Odotettu asiakasmäärä $L$}
 
 Olkoon satunnaismuuttuja $N$ asiakkaiden lukumäärä systeemissä. Äsken johdettu $p_n$ on muuttujan $N$ todennäköisyysfunktio, eli $P(N=n) = p_n$.
 Odotusarvo lasketaan summaamalla jokainen tila painotettuna niiden todennäköisyyksillä:
-\begin{equation}
+\begin{equation*}
     L = E[N] = \sum_{n=0}^{\infty} n p_n = (1-\rho) \sum_{n=0}^{\infty} n \rho^n
-\end{equation}
+\end{equation*}
 
 Summan $\sum n \rho^n$ laskemiseksi tarkastellaan tuttua geometrista sarjaa funktiota:
 \begin{equation*}
@@ -142,9 +303,9 @@ Derivoidaan yhtälö puolittain muuttujan $x$ suhteen:
     \sum_{n=1}^{\infty} n x^{n-1} &= (-1)(1-x)^{-2}(-1) = \frac{1}{(1-x)^2}
 \end{align*}
 Kerrotaan puolittain $x$:llä, jolloin saadaan haluttu muoto:
-\begin{equation}
+\begin{equation*}
     \sum_{n=1}^{\infty} n x^n = \frac{x}{(1-x)^2}
-\end{equation}
+\end{equation*}
 
 Sijoitetaan tämä tulos (missä $x=\rho$) alkuperäiseen odotusarvon lausekkeeseen:
 \begin{align*}
@@ -153,9 +314,9 @@ Sijoitetaan tämä tulos (missä $x=\rho$) alkuperäiseen odotusarvon lausekkees
 \end{align*}
 
 Palautetaan alkuperäiset muuttujat sijoittamalla $\rho = \frac{\lambda}{x\mu}$:
-\begin{equation}
+\begin{equation*}
     L(x) = \frac{\frac{\lambda}{x\mu}}{1 - \frac{\lambda}{x\mu}} = \frac{\lambda}{x\mu - \lambda}
-\end{equation}
+\end{equation*}
 
 Eli odotettu asiakasmäärä on: $\frac{\lambda}{x\mu - \lambda}$
 
