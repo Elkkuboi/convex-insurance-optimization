@@ -51,7 +51,7 @@
 \maketitle
 
 \section{Johdanto}
-Tässä dokumentissa johdetaan analyyttinen ratkaisu kahden jonon resurssien allokointiongelmalle. Tarkastelu etenee kahdessa vaiheessa: ensin johdetaan yksittäisen M/M/1-jonon odotusajan lauseke, minkä jälkeen ratkaistaan optimointiongelma Lagrangen kertoimien menetelmällä.
+Tässä dokumentissa johdetaan analyyttinen ratkaisu kahden jonon resurssien allokointiongelmalle. Tarkastelu etenee kahdessa vaiheessa: ensin johdetaan yksittäisen M/M/1-jonon odotusajan lauseke, minkä jälkeen ratkaistaan optimointiongelma KKT-ehdoilla. Lopuksi lasketaan vielä teoreettinen työntekijöiden allokointi, jota voimme käyttää myöhemmin simulaation vertailukohteena.
 
 \subsection{Muuttujat}
 Mallissa käytetään seuraavia merkintöjä:
@@ -511,9 +511,9 @@ Koska minimoimme konveksia funktiota konveksissa joukossa, löydetty KKT-piste $
 Optimointiongelman ratkaisuna saamme analyyttisen kaavan optimaaliselle resurssimäärälle $x_i^*$ jokaiselle jonolle $i$. Ratkaisu voidaan esittää muodossa:
 
 \begin{derivationbox}
-\begin{equation*} \label{eq:final_result}
+\begin{equation} \label{eq:final_result}
     x_i^* = \underbrace{\frac{\lambda_i}{\mu_i}}_{\text{Minimitarve}} + \underbrace{\frac{\sqrt{w_i / c_i \mu_i}}{\sum_{j} \sqrt{w_j c_j / \mu_j}}}_{\text{Allokaatiosuhde}} \cdot \underbrace{\left( B - B_{min} \right)}_{\text{Ylijäämäbudjetti}}
-\end{equation*}  
+\end{equation}  
 Missä $B_{min} = \sum \frac{c_j \lambda_j}{\mu_j}$ on stabiilisuuden vaatima minimibudjetti.
 \end{derivationbox}
 
